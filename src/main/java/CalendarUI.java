@@ -16,9 +16,12 @@ import java.util.HashMap;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
 
@@ -30,19 +33,41 @@ public class CalendarUI  extends JFrame implements ActionListener{
 	private Map<String,String> colorMap;
 	private static final String fin = "users.txt";
 	private CalendarCtrl ctrl;
+	private JTabbedPane tabbedPane;
 	
 	public CalendarUI(String s) throws IOException
 	{
 		super(s);
+		
+		/*
+		 * 
+		 * Create tab
+		 * 
+		 */
+		tabbedPane = new JTabbedPane();
+		JPanel panel1 = new JPanel();
+		JPanel panel2 = new JPanel();
+		
+		panel1.setLayout(new BorderLayout());
+		
+		tabbedPane.add("請假查詢",panel1);
+		tabbedPane.add("出缺席",panel2);
+		
+		
 		beginDateText = new JTextField();
 		endDateText = new JTextField();
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setResizable(false);
 		Container pane = this.getContentPane();
-		pane.setLayout(new BorderLayout());
+		pane.add(tabbedPane);
+		addFirstTab(panel1);
+		addSecondTab(panel2);
 		
 
-		
+	}
+	
+	private void addFirstTab(JPanel p) throws IOException
+	{
 		/* initialize user data (colorMap)
 		 * 
 		 * 
@@ -191,10 +216,15 @@ public class CalendarUI  extends JFrame implements ActionListener{
 		btnContainer.add(rewindBtn);
 		mainArea.add(btnContainer);
 	
-		pane.add(datePicker, BorderLayout.NORTH);
-		pane.add(mainArea, BorderLayout.CENTER);
+		p.add(datePicker, BorderLayout.NORTH);
+		p.add(mainArea, BorderLayout.CENTER);		
 	}
 
+	private void addSecondTab(JPanel p)
+	{
+		
+	}
+	
 	private static void createAndShowGUI() throws IOException{
 		CalendarUI frame = new CalendarUI("請假登入");
 		frame.pack();
