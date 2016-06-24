@@ -1,12 +1,14 @@
 import java.awt.BorderLayout;
 import java.awt.ComponentOrientation;
 import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -17,6 +19,7 @@ import java.util.HashMap;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -24,16 +27,20 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
+import javax.swing.filechooser.FileFilter;
+
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 
 public class CalendarUI  extends JFrame implements ActionListener{
 	
 	private	JComboBox<String> year, month, day, hour, minute, users;
-	private JTextField beginDateText, endDateText;
-	private JButton beginDateBtn, endDateBtn, submitBtn, rewindBtn;
+	private JTextField beginDateText, endDateText, fileNameText;
+	private JButton beginDateBtn, endDateBtn, submitBtn, rewindBtn, fileBtn;
 	private Map<String,String> colorMap;
 	private static final String fin = "users.txt";
 	private CalendarCtrl ctrl;
 	private JTabbedPane tabbedPane;
+	JFileChooser fc;
 	
 	public CalendarUI(String s) throws IOException
 	{
@@ -48,6 +55,14 @@ public class CalendarUI  extends JFrame implements ActionListener{
 		JPanel panel1 = new JPanel();
 		JPanel panel2 = new JPanel();
 		
+		/*
+		 * 
+		 * file chooser
+		 * 
+		 */
+		fc = new JFileChooser();
+
+		
 		panel1.setLayout(new BorderLayout());
 		
 		tabbedPane.add("請假查詢",panel1);
@@ -56,6 +71,9 @@ public class CalendarUI  extends JFrame implements ActionListener{
 		
 		beginDateText = new JTextField();
 		endDateText = new JTextField();
+		fileNameText = new JTextField();
+		fileNameText.setPreferredSize(new Dimension(130,30));
+		
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setResizable(false);
 		Container pane = this.getContentPane();
@@ -222,7 +240,11 @@ public class CalendarUI  extends JFrame implements ActionListener{
 
 	private void addSecondTab(JPanel p)
 	{
-		
+		p.setLayout(new FlowLayout());
+		fileBtn = new JButton("開啟記錄");
+		fileBtn.addActionListener(this);
+		p.add(fileNameText);
+		p.add(fileBtn);
 	}
 	
 	private static void createAndShowGUI() throws IOException{
@@ -291,6 +313,24 @@ public class CalendarUI  extends JFrame implements ActionListener{
 					{
 						JOptionPane.showMessageDialog(this, "沒有上一個事件");
 						ioexception.printStackTrace();
+					}
+				}
+			}else if (s == fileBtn)
+			{
+				int ret = fc.showOpenDialog(this);
+				if (ret == JFileChooser.APPROVE_OPTION)
+				{
+					File f = fc.getSelectedFile();
+					fileNameText.setText(f.getName());
+					try{
+						xlsCtrl xlsctrl = new xlsCtrl(f.getPath());
+					} catch (IOException ioe)
+					{
+						JOptionPane.showMessageDialog(this, "無法存取檔案:"+f.getPath());
+						ioe.printStackTrace();
+					} catch (InvalidFormatException ife)
+					{
+						JOptionPane.showMessageDialog(this, "檔案格式錯誤:"+ife.getMessage());
 					}
 				}
 			}
