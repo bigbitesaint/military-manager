@@ -15,32 +15,36 @@ import java.io.InputStreamReader;
 import java.util.Calendar;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
 
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.UIManager;
-import javax.swing.filechooser.FileFilter;
-
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+
 
 public class CalendarUI  extends JFrame implements ActionListener{
 	
 	private	JComboBox<String> year, month, day, hour, minute, users;
 	private JTextField beginDateText, endDateText, fileNameText;
-	private JButton beginDateBtn, endDateBtn, submitBtn, rewindBtn, fileBtn;
+	private JButton beginDateBtn, endDateBtn, submitBtn, rewindBtn, fileBtn, fileSubBtn;
+	private JList errorRecords;
 	private Map<String,String> colorMap;
 	private static final String fin = "users.txt";
 	private CalendarCtrl ctrl;
 	private JTabbedPane tabbedPane;
 	JFileChooser fc;
+	xlsCtrl xlsctrl;
 	
 	public CalendarUI(String s) throws IOException
 	{
@@ -92,7 +96,7 @@ public class CalendarUI  extends JFrame implements ActionListener{
 		 */
 		colorMap = new HashMap<String,String>();
 		
-		BufferedReader br = new BufferedReader(new InputStreamReader(new DataInputStream(new FileInputStream(fin))));
+		BufferedReader br = new BufferedReader(new InputStreamReader(new DataInputStream(new FileInputStream(fin)), "UTF8"));
 		String buffer;
 		
 		while ( (buffer=br.readLine()) != null)
@@ -100,6 +104,7 @@ public class CalendarUI  extends JFrame implements ActionListener{
 			String[] temp = buffer.split(",");
 			colorMap.put(temp[0], temp[1]);
 		}
+		br.close();
 		
 		String[] userMenu = colorMap.keySet().toArray(new String[colorMap.size()]);
 		users = new JComboBox<String>(userMenu);
@@ -240,12 +245,24 @@ public class CalendarUI  extends JFrame implements ActionListener{
 
 	private void addSecondTab(JPanel p)
 	{
-		p.setLayout(new FlowLayout());
+		Container topPanel = new Container();
+		topPanel.setLayout(new FlowLayout());
 		fileBtn = new JButton("開啟記錄");
 		fileBtn.addActionListener(this);
-		p.add(fileNameText);
-		p.add(fileBtn);
+		fileSubBtn = new JButton("開始");
+		fileSubBtn.addActionListener(this);
+		topPanel.add(fileNameText);
+		topPanel.add(fileBtn);
+		topPanel.add(fileSubBtn);
+		
+		
+		errorRecords = new JList();
+		p.setLayout(new BorderLayout());
+		p.add(topPanel, BorderLayout.NORTH);
+		p.add(new JScrollPane(errorRecords), BorderLayout.CENTER);
 	}
+	
+
 	
 	private static void createAndShowGUI() throws IOException{
 		CalendarUI frame = new CalendarUI("請假登入");
@@ -256,6 +273,7 @@ public class CalendarUI  extends JFrame implements ActionListener{
 	public static void main(String args[]) throws Exception
 	{
 		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		System.out.println(DBHelper.executeQuery());
         javax.swing.SwingUtilities.invokeLater(new Runnable(){
             public void run(){
             	try{
@@ -322,17 +340,35 @@ public class CalendarUI  extends JFrame implements ActionListener{
 				{
 					File f = fc.getSelectedFile();
 					fileNameText.setText(f.getName());
-					try{
-						xlsCtrl xlsctrl = new xlsCtrl(f.getPath());
-					} catch (IOException ioe)
-					{
-						JOptionPane.showMessageDialog(this, "無法存取檔案:"+f.getPath());
-						ioe.printStackTrace();
-					} catch (InvalidFormatException ife)
-					{
-						JOptionPane.showMessageDialog(this, "檔案格式錯誤:"+ife.getMessage());
-					}
+					xlsctrl = new xlsCtrl(f.getPath(), ctrl);
 				}
+			}else if (s == fileSubBtn)
+			{
+				List<String> ret=null;
+				try{
+					ret=xlsctrl.runCheck();
+				} catch (IOException ioe)
+				{
+					JOptionPane.showMessageDialog(this, "無法存取檔案.");
+					ioe.printStackTrace();
+				} catch (InvalidFormatException ife)
+				{
+					JOptionPane.showMessageDialog(this, "檔案格式錯誤:"+ife.getMessage());
+				}
+				
+
+
+				
+				if (ret != null)
+				{
+					DefaultListModel<String> lm = new DefaultListModel<String>();
+					for (String str:ret)
+					{
+						lm.addElement(str);
+					}
+					errorRecords.setModel(lm);
+				}
+				
 			}
 		}else if (e.getSource() instanceof JComboBox)
 		{

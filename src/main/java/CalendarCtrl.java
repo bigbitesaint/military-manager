@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -151,35 +152,31 @@ public class CalendarCtrl {
         event.setEnd(end);
 
         event = service.events().insert(CalendarID, event).execute();
-        this.prevEventId.add(event.getId());
+        prevEventId.add(event.getId());
         JOptionPane.showMessageDialog(null, "新增成功");
         System.out.printf("Event created: %s\n", event.getHtmlLink());
 
     }
 
-    public List<String> getList() throws IOException
+    public List<Event> getEvents(Date startTime, Date endTime, String user) throws IOException
     {
-    	List<String> result = new ArrayList<String>();
-        // List the next 10 events from the primary calendar.
-        DateTime now = new DateTime(System.currentTimeMillis());
+
         Events events = service.events().list(CalendarID)
             .setMaxResults(10)
-            .setTimeMin(now)
+            .setTimeMin(new DateTime(startTime))
+            .setTimeMax(new DateTime(endTime))
             .setOrderBy("startTime")
             .setSingleEvents(true)
             .execute();
         List<Event> items = events.getItems();
-        
+        List<Event> results = new ArrayList<Event>();
         for (Event event : items) {
-        	DateTime start = event.getStart().getDateTime();
-            if (start == null) {
-            	start = event.getStart().getDate();
-            }
-            result.add(event.getSummary()+" ("+start+")");
+        	if (event.getSummary().equals(user))
+        		results.add(event);
         }
             	
     	
-    	return result;
+    	return results;
     }
     
     public void setColorMap(Map<String,String> hm)
